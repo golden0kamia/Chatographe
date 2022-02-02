@@ -91,19 +91,23 @@
     <OutDir>$(SolutionDir)$(ProjectName)\$(PlatformTarget)\$(Configuration)\</OutDir>
     <IntDir>$(PlatformTarget)\$(Configuration)\temp\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\kiss_sdl-1.2.12;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\gtkmm\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2_net.lib;SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);%(AdditionalLibraryDirectories);C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0\um\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;SDL2_net.lib;d3d11.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget)\*.dll" "$(OutputPath)"
@@ -118,15 +122,16 @@ copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\kiss_sdl-1.2.12;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\gtkmm\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2_net.lib;SDL2main.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);%(AdditionalLibraryDirectories);C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0\um\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;SDL2_net.lib;d3d11.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget)\*.dll" "$(OutputPath)"
@@ -139,13 +144,14 @@ copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\kiss_sdl-1.2.12;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\gtkmm\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\lib\$(PlatformTarget);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;SDL2_net.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\lib\$(PlatformTarget);%(AdditionalLibraryDirectories);C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0\um\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;SDL2_net.lib;d3d11.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget)\*.dll" "$(OutputPath)"
@@ -160,15 +166,16 @@ copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\kiss_sdl-1.2.12;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\include;$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\gtkmm\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\lib\$(PlatformTarget);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2main.lib;SDL2.lib;SDL2_net.lib;SDL2_ttf.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_image-2.0.5\lib\$(PlatformTarget);$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_ttf-2.0.15\lib\$(PlatformTarget);%(AdditionalLibraryDirectories);C:\Program Files (x86)\Windows Kits\10\Lib\10.0.18362.0\um\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2main.lib;SDL2.lib;SDL2_net.lib;d3d11.lib</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2-2.0.10\lib\$(PlatformTarget)\*.dll" "$(OutputPath)"
@@ -176,7 +183,24 @@ copy "$(HOMEPATH)\Nextcloud\Programmation\CC++\Library\SDL\SDL2_net-2.0.1\lib\$(
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="imgui.cpp" />
+    <ClCompile Include="imgui_demo.cpp" />
+    <ClCompile Include="imgui_draw.cpp" />
+    <ClCompile Include="imgui_impl_dx11.cpp" />
+    <ClCompile Include="imgui_impl_sdl.cpp" />
+    <ClCompile Include="imgui_tables.cpp" />
+    <ClCompile Include="imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="imconfig.h" />
+    <ClInclude Include="imgui.h" />
+    <ClInclude Include="imgui_impl_dx11.h" />
+    <ClInclude Include="imgui_impl_sdl.h" />
+    <ClInclude Include="imgui_internal.h" />
+    <ClInclude Include="imstb_rectpack.h" />
+    <ClInclude Include="imstb_textedit.h" />
+    <ClInclude Include="imstb_truetype.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
