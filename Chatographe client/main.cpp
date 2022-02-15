@@ -15,7 +15,9 @@
 #define MAX_MSG_LENGTH 1004
 #define MAX_NME_LENGTH 20
 #define MAX_RCV_LENGTH MAX_MSG_LENGTH + MAX_NME_LENGTH
+#define MAX_SND_LENGTH MAX_RCV_LENGTH
 #define MAX_DSP_MESSAGE 100
+#define CMDSetColor SetConsoleTextAttribute
 
 enum CMDColors {
 	bgdbkfgdbk = 0,
@@ -298,39 +300,87 @@ void CleanupRenderTarget();
 //int lscanf(void* output);
 char** strcut(char* strin);
 int strjoin(char** dst, char* src);
+char* strjoin(char* dst, char* src);
 char* strfill(char* strin, int len);
-
-int RcvMsg = 0;
-char** nmsgs[MAX_DSP_MESSAGE] = {};
-char msgs[5][2][MAX_MSG_LENGTH] = {{"Bastien-PC", "Hello wolrd!"},
-	{"Kildef", "0123456789"},
-	{"Bastien-PC", "()[]{}ß+@#*%&//=?!·ÈÌÛ˙‡ËÏÚ˘‚ÍÓÙ˚"},
-	{"Bastien-PC", "abcdefghijklmnopqrstuvwxyz"},
-	{"Kildef", "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}};
+char* makeMsg(char* name, char* msg);
+int pushList(char*** list);
 
 int main(int argc, char** argv) {
-	//Get console info
+	int RcvMsg = 0;
+	char*** msgs = (char***)calloc(sizeof(char**), MAX_DSP_MESSAGE);
+	double timeout = (double)SDL_GetPerformanceCounter();
+	char* host = (char*)calloc(sizeof(char), 12);
+
+	strcpy(host, "127.0.0.1");
+	char* selfPseudo = (char*)calloc(sizeof(char), MAX_NME_LENGTH);
+	strcpy(selfPseudo, "chatolient");
+	bool connected = false;
+
+	//--Retrieve saved data and server info--
+	FILE* connectData = fopen("ConnectionInfo.ctg", "r");
+	if (connectData != NULL) {
+		fscanf(connectData, "%s", selfPseudo);
+		fscanf(connectData, "%s", host);
+		fclose(connectData);
+	}
+	FILE* convData = fopen("ConversationSave.ctg", "r");
+	if (convData != NULL) {
+		char message[MAX_RCV_LENGTH] = {};
+		int k = -3;
+		fseek(convData, k, SEEK_END);
+		//fseek(convData, 0, SEEK_SET);
+		for (int i = 0; i < MAX_DSP_MESSAGE - 1; i++) {
+			while ((ftell(convData) != 0) && (fgetc(convData) != '\n')) {
+				k--;
+				fseek(convData, k, SEEK_END);
+			}
+			fgets(message, MAX_RCV_LENGTH, convData);
+			int msglen = strlen(message);
+			//printf("%s", message);
+			char* name = (char*)calloc(sizeof(char), MAX_NME_LENGTH);
+			char* msg = (char*)calloc(sizeof(char), MAX_MSG_LENGTH);
+			strcpy(name, strtok(message, "\t"));
+			strcpy(msg, strtok(NULL, "\t"));
+			char** final = (char**)calloc(sizeof(char*), 2);
+			*(final) = name;
+			*(final + 1) = msg;
+			*(msgs + (MAX_DSP_MESSAGE - 1 - i)) = final;
+			//printf("%p: %p: %p, %p: %s, %s\n", msgs, *(msgs + 99), *(*(msgs + 99)), *(*(msgs + 99) + 1), *(*(msgs + 99)), *(*(msgs + 99) + 1));
+			if (ftell(convData) - (msglen + 1) == 0) break;
+			k--;
+		}
+		fclose(convData);
+		RcvMsg = pushList(msgs);
+		//printf("pushed list:\n%p: %p: %p, %p: %s, %s\n", msgs, *(msgs), *(*(msgs)), *(*(msgs) + 1), *(*(msgs)), *(*(msgs) + 1));
+		//printf("nmbs = %d\n", RcvMsg);
+	}
+	
+	//--Get console info--
+
+	//Information of the console
 	HANDLE hConsole;
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	
-	const char* host  = "127.0.0.1";
-	if (argc != 1) host = argv[1];
+	if (argc >= 2) host = argv[1];
+	if (argc >= 3) selfPseudo = argv[2];
 
-	//Init graphic system
+	//--Init graphic system--
 	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
-		SetConsoleTextAttribute(hConsole, CMDerror);
+		CMDSetColor(hConsole, CMDerror);
 		printf("SDL_Init: %s\n", SDL_GetError());
-		SetConsoleTextAttribute(hConsole, CMDnormal);
-		exit(-1);
+		CMDSetColor(hConsole, CMDnormal);
+		return(-1);
 	}
 	if (SDLNet_Init()) {
-		SetConsoleTextAttribute(hConsole, CMDerror);
+		CMDSetColor(hConsole, CMDerror);
 		printf("SDLNet_Init: %s\n", SDLNet_GetError());
-		SetConsoleTextAttribute(hConsole, CMDnormal);
-		exit(-2);
+		CMDSetColor(hConsole, CMDnormal);
+		return(-2);
 	}
-	SDL_Window* window = SDL_CreateWindow("Chatographe v2.0.0", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, 0);
-	SDL_SysWMinfo wmInfo;
+	//Window of the application
+	SDL_Window* window = SDL_CreateWindow("Chatographe v1.2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, 0);
+	//Window manager information
+	SDL_SysWMinfo wmInfo = {};
 	SDL_VERSION(&wmInfo.version);
 	SDL_GetWindowWMInfo(window, &wmInfo);
 	HWND hwnd = (HWND)wmInfo.info.win.window;
@@ -341,40 +391,40 @@ int main(int argc, char** argv) {
 	ImGui::StyleColorsClassic();
 	ImGui_ImplSDL2_InitForD3D(window);
 	ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
-	ImVec4 clear_color = { 0.15f, 0.15f, 0.15f, 1.f };
+	//Color use to the background
+	ImVec4 clear_color = { 50.f / 255.f, 130.f / 255.f, 50.f / 255.f, 1.f };
 
-	//Init network system
+	//--Init network system--
 	IPaddress selfIP;
-	if (SDLNet_ResolveHost(&selfIP, host, short(71625))) {
-		SetConsoleTextAttribute(hConsole, CMDerror);
+	if (SDLNet_ResolveHost(&selfIP, host, short(16257))) {
+		CMDSetColor(hConsole, CMDerror);
 		printf("SDLNet_ResolveHost: %s\n", SDLNet_GetError());
-		SetConsoleTextAttribute(hConsole, CMDnormal);
-		exit(-3);
+		CMDSetColor(hConsole, CMDnormal);
+		return(-3);
 	}
 	TCPsocket selfSocket = SDLNet_TCP_Open(&selfIP);
 	if (selfSocket == NULL) {
-		SetConsoleTextAttribute(hConsole, CMDerror);
+		CMDSetColor(hConsole, CMDerror);
 		printf("DLNet_TCP_Open: %s\n", SDLNet_GetError());
-		SetConsoleTextAttribute(hConsole, CMDnormal);
-		exit(-4);
+		CMDSetColor(hConsole, CMDnormal);
+		return(-4);
 	}
 	SDLNet_SocketSet socketSet = SDLNet_AllocSocketSet(MAX_MSG_LENGTH + 1);
 	if (socketSet == NULL) {
-		SetConsoleTextAttribute(hConsole, CMDerror);
+		CMDSetColor(hConsole, CMDerror);
 		printf("SDLNet_AllocSocketSet: %s\n", SDLNet_GetError());
-		SetConsoleTextAttribute(hConsole, CMDnormal);
-		exit(-5);
+		CMDSetColor(hConsole, CMDnormal);
+		return(-5);
 	}
 	if (!SDLNet_TCP_AddSocket(socketSet, selfSocket)) {
-		SetConsoleTextAttribute(hConsole, CMDerror);
+		CMDSetColor(hConsole, CMDerror);
 		printf("SDLNet_TCP_AddSocket: %s\n", SDLNet_GetError());
-		SetConsoleTextAttribute(hConsole, CMDnormal);
-		exit(-6);
+		CMDSetColor(hConsole, CMDnormal);
+		return(-6);
 	}
-	char* selfName = (char*)SDLNet_ResolveIP(SDLNet_TCP_GetPeerAddress(selfSocket));
 	//TCPsocket serverSocket[MAX_SERVER];
 	int connectedServer = 0;
-
+	SDLNet_TCP_Send(selfSocket, makeMsg((char*)"/Client pseudo\\", selfPseudo), MAX_SND_LENGTH);
 	//Init thread system
 	/*char readLine[MAX_MSG_LENGTH] = "";
 	void* passRead = (void**)&readLine;
@@ -382,11 +432,14 @@ int main(int argc, char** argv) {
 	readerThread = SDL_CreateThread(lscanf, "Reader thread", &passRead);
 	SDL_DetachThread(readerThread);*/
 
-
+	//--Start software loop--
 	SDL_Event event;
 	bool running = true;
+	bool connection = true;
 	bool sending = false;
 	char message[MAX_MSG_LENGTH] = {};
+	bool newMsg = true;
+	float prevScrollY = 1.f;
 	printf("Start client\n");
 	while (running) {
 
@@ -394,28 +447,30 @@ int main(int argc, char** argv) {
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			switch (event.type) {
 			case SDL_QUIT:
+				SDLNet_TCP_Send(selfSocket, makeMsg((char*)"/Close session\\", (char*)""), MAX_RCV_LENGTH);
 				running = false;
 				printf("Exit\n");
 				SDLNet_TCP_Close(selfSocket);
 				break;
 			case SDL_KEYUP:
-				if (event.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+				if (event.key.keysym.scancode == SDL_SCANCODE_RETURN || event.key.keysym.scancode == SDL_SCANCODE_KP_ENTER) {
 					sending = true;
 				}
 			default:
 				break;
 			}
-			CleanupRenderTarget;
+			CleanupRenderTarget();
 			g_pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
 			CreateRenderTarget();
 		}
 
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window);
+		//ImGui::ShowDemoWindow();
 		ImGui::NewFrame();
-
-		ImVec4 color = { 14. / 255., 94. / 255., 14. / 255., 255. / 255. };
-		ImVec4 color2 = { 138. / 255., 45. / 255., 75. / 255., 255. / 255. };
+		
+		ImVec4 color = { 14.f / 255.f, 94.f / 255.f, 14.f / 255.f, 255.f / 255.f };
+		ImVec4 color2 = { 138.f / 255.f, 45.f / 255.f, 75.f / 255.f, 255.f / 255.f };
 		{
 			static ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings;
 			static float f = 0.0f;
@@ -423,28 +478,37 @@ int main(int argc, char** argv) {
 			const ImGuiViewport* viewport = ImGui::GetMainViewport();
 			ImGui::SetNextWindowPos(viewport->Pos);
 			ImGui::SetNextWindowSize(viewport->Size);
-
-			ImGui::Begin("Settings", &running, flags);
-			ImGui::BeginChild("Messages", ImVec2(viewport->Size.x - 20, -20), true, ImGuiWindowFlags_None);
+			ImGui::Begin("Chatogrape app", &running, flags);
+			ImGui::BeginChild("Messages", ImVec2(viewport->Size.x - 20, -25), true, ImGuiWindowFlags_None);
 			for (int i = 0; i < RcvMsg; i++) {
-				if (!strcmp(*(*(nmsgs + i)), selfName)) {
-					ImGui::TextColored(color, *(*(nmsgs + i)));
-					ImGui::TextWrapped(*(*(nmsgs + i) + 1));
+				if (!strcmp(*(*(msgs + i)), selfPseudo)) {
+					ImGui::TextColored(color, *(*(msgs + i)));
+					ImGui::TextWrapped(*(*(msgs + i) + 1));
 				}
 				else {
 					ImGui::Indent(100.f);
-					ImGui::TextColored(color2, *(*(nmsgs + i)));
-					ImGui::TextWrapped(*(*(nmsgs + i) + 1));
+					ImGui::TextColored(color2, *(*(msgs + i)));
+					ImGui::TextWrapped(*(*(msgs + i) + 1));
 					ImGui::Unindent(100.f);
 				}
 				ImGui::Spacing();
 			}
+			if (prevScrollY == 1. && newMsg) ImGui::SetScrollHereY(1.0f);
+			prevScrollY = ImGui::GetScrollY() / ImGui::GetScrollMaxY();
 			ImGui::EndChild();
 			ImGui::InputTextWithHint("##", "Write your message here", message, MAX_MSG_LENGTH);
 			ImGui::SameLine();
 			sending |= ImGui::Button("Send");
-
 			ImGui::End();
+			newMsg = false;
+			
+			/*ImGui::SetNextWindowPos(ImVec2((viewport->Size.x - 200) / 2, (viewport->Size.y - 100) / 2));
+			ImGui::SetNextWindowSize(ImVec2(200, 80));
+			ImGui::Begin("Connection", &connection, (ImGuiWindowFlags_NoDecoration));
+			ImGui::InputText("Pseudo", selfPseudo, MAX_NME_LENGTH);
+			ImGui::InputText("Server", host, 12);
+			ImGui::Button("Connect");
+			ImGui::End();*/
 		}
 
 		ImGui::Render();
@@ -455,6 +519,20 @@ int main(int argc, char** argv) {
 		g_pSwapChain->Present(1, 0); // Present with vsync
 		//g_pSwapChain->Present(0, 0); // Present without vsync
 
+
+		double localcounter = SDL_GetPerformanceCounter() - timeout;
+		//--Check server timeout--
+		if (localcounter < 15000) {
+			CMDSetColor(hConsole, CMDerror);
+			printf("Error server not responding, disconnecting");
+			CMDSetColor(hConsole, CMDnormal);
+			SDLNet_TCP_Send(selfSocket, makeMsg((char*)"/Close session\\", (char*)""), MAX_RCV_LENGTH);
+			running = false;
+			printf("Exit\n");
+			SDLNet_TCP_Close(selfSocket);
+		}
+
+		//--Check newly message--
 		int serverActive = SDLNet_CheckSockets(socketSet, 0);
 		if (serverActive) {
 			int selfActive = SDLNet_SocketReady(selfSocket);
@@ -464,53 +542,71 @@ int main(int argc, char** argv) {
 				//printf("lenIn: %d\n", lenIn);
 				//printf("dataIn: %s\n", dataIn);
 				if (lenIn > 0) {
-					printf("%s\n", dataIn);
-					nmsgs[RcvMsg] = strcut(dataIn);
-					RcvMsg++;
-					//Process message
+					timeout = (double)SDL_GetPerformanceCounter();
+					*(msgs + RcvMsg) = strcut(dataIn);
+					if (!strcmp(*(*(msgs + RcvMsg)), "/Client pseudo\\")) {
+						if (!strcmp(*(*(msgs + RcvMsg) + 1), selfPseudo)) {
+							connected = true;
+						}
+					}
+					else if (!strcmp(*(*(msgs + RcvMsg)), "/Server test\\")) {
+						if (!strcmp(*(*(msgs + RcvMsg) + 1), "ping")) {
+							char* msgSend = makeMsg((char*)"/Server test\\", (char*)"pong");
+							SDLNet_TCP_Send(selfSocket, msgSend, MAX_RCV_LENGTH);
+							timeout = (double)SDL_GetPerformanceCounter();
+						}
+					}
+					else if (!strcmp(*(*(msgs + RcvMsg)), "/Info Server\\")) {
+
+					}
+					else {
+						printf("%s\n", dataIn);
+						FILE* convData = fopen("ConversationSave.ctg", "a");
+						fprintf(convData, "%s\t%s\n", *(*(msgs + RcvMsg)), *(*(msgs + RcvMsg) + 1));
+						fclose(convData);
+						RcvMsg++;
+						newMsg = true;
+					}
 				}
 			}
 		}
-
-		/*//printf("passRead: %s\n", (char*)passRead);
-		int compare = strcmp((char*)passRead, "");
-		//printf("compare: %d\n", compare);
-		if (compare) {
-			//printf("compare good\n");
-			int msgLen = (int)strlen((char*)passRead) + 1;
-			//printf("msgLen: %d", msgLen);
-			SDLNet_TCP_Send(selfSocket, (char*)passRead, msgLen);
-			for (int i = 0; i < MAX_MSG_LENGTH; i++) {
-				passRead = readLine;
-			}
-		}*/	
 		
-	
 		if (sending && strcmp(message, "")) {
-			int msgLen = (int)strlen((char*)message) + 1;
+			char* sendMsg = makeMsg((char*)"/Text message\\", message);
 			//printf("msgLen: %d", msgLen);
-			if (SDLNet_TCP_Send(selfSocket, (char*)message, msgLen)) {
-				printf("Successfull sending\n");
-				char* fillName = strfill(selfName, MAX_NME_LENGTH);
-				char* fillmsg = strfill(message, MAX_MSG_LENGTH);
-				strjoin(&fillName, fillmsg);
-				nmsgs[RcvMsg] = strcut(fillName);
+			if (SDLNet_TCP_Send(selfSocket, sendMsg, MAX_RCV_LENGTH)) {
+				char* buildMsg = makeMsg(selfPseudo, message);
+				*(msgs + RcvMsg) = strcut(buildMsg);
+				FILE* convData = fopen("ConversationSave.ctg", "a");
+				fprintf(convData, "%s\t%s\n", *(*(msgs + RcvMsg)), *(*(msgs + RcvMsg) + 1));
+				fclose(convData);
 				RcvMsg++;
 				for (int i = 0; i < MAX_MSG_LENGTH; i++) {
 					message[i] = '\0';
 				}
 			}
-
 			//Write to conv file
+			newMsg = true;
 		}
 		sending = false;
 
 	}
 
-	// Cleanup
+	//--Cleanup--
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
+
+	free(host);
+	free(selfPseudo);
+	for (int i = 0; i < MAX_DSP_MESSAGE; i++) {
+		if (*(msgs + i) != NULL) {
+			if (*(*(msgs+i)) != NULL) free(*(*(msgs+i)));
+			if (*(*(msgs+i)+1) != NULL) free(*(*(msgs+i)+1));
+			free(*(msgs + i));
+		}
+	}
+	free(msgs);
 
 	CleanupDeviceD3D();
 	SDL_DestroyWindow(window);
@@ -553,9 +649,9 @@ int main(int argc, char** argv) {
 }*/
 
 char** strcut(char* strin) {
-	char** text = (char**)malloc(2 * sizeof(char*));
-	*(text) = (char*)malloc(MAX_NME_LENGTH * sizeof(char));
-	*(text+1) = (char*)malloc(MAX_MSG_LENGTH * sizeof(char));
+	char** text = (char**)calloc(sizeof(char*), 2);
+	*(text) = (char*)calloc(sizeof(char), MAX_NME_LENGTH);
+	*(text + 1) = (char*)calloc(sizeof(char), MAX_MSG_LENGTH);
 	for (int i = 0; i < MAX_NME_LENGTH; i++) {
 		*(*(text)+i) = *(strin + i);
 	}
@@ -566,7 +662,7 @@ char** strcut(char* strin) {
 }
 
 char* strfill(char* strin, int len) {
-	char* text = (char*)malloc(len * sizeof(char));
+	char* text = (char*)calloc(sizeof(char), len);
 	int leng = strlen(strin);
 	for (int i = 0; i < leng; i++)
 		*(text + i) = *(strin + i);
@@ -576,14 +672,52 @@ char* strfill(char* strin, int len) {
 }
 
 int strjoin(char** dst, char* src) {
-	char* join = (char*)malloc(MAX_RCV_LENGTH);
+	int dstLen = sizeof(*dst) / sizeof(**dst);
+	int srcLen = sizeof(src) / sizeof(*src);
+	char* join = (char*)calloc(sizeof(char), (dstLen + srcLen));
 	char* tmp = *dst;
-	for (int i = 0; i < MAX_NME_LENGTH; i++)
+	for (int i = 0; i < dstLen; i++)
 		*(join + i) = *(tmp + i);
+	for (int i = 0; i < srcLen; i++)
+		*(join + i + dstLen) = src[i];
+	*dst = join;
+	return dstLen + srcLen;
+}
+
+char* strjoin(char* dst, char* src) {
+	char* join = (char*)calloc(sizeof(char), MAX_RCV_LENGTH);
+	for (int i = 0; i < MAX_NME_LENGTH; i++)
+		*(join + i) = *(dst + i);
 	for (int i = 0; i < MAX_MSG_LENGTH; i++)
 		*(join + i + MAX_NME_LENGTH) = src[i];
-	*dst = join;
-	return MAX_RCV_LENGTH;
+	return join;
+}
+
+char* makeMsg(char* name, char* msg) {
+	name = strfill(name, MAX_NME_LENGTH);
+	msg = strfill(msg, MAX_MSG_LENGTH);
+	char* sndMsg = NULL;
+	sndMsg = strjoin(name, msg);
+	return sndMsg;
+}
+
+int pushList(char*** list) {
+	//printf("pushlist:\n%p: %p: %p, %p: %s, %s\n", list, *(list + 99), *(*(list + 99)), *(*(list + 99) + 1), *(*(list + 99)), *(*(list + 99) + 1));
+	int nmbs = 0;
+	for (int i = 0; i < MAX_DSP_MESSAGE; i++) {
+		if (*(list + i) == NULL) {
+			for (int j = i; j < MAX_DSP_MESSAGE; j++) {
+				if (*(list + j) != NULL) {
+					*(list + i) = *(list + j);
+					*(list + j) = NULL;
+					nmbs++;
+					break;
+				}
+			}
+		}
+	}
+	//printf("pushlist:\n%p: %p: %p, %p: %s, %s\n", list, *(list), *(*(list)), *(*(list) + 1), *(*(list)), *(*(list) + 1));
+	return nmbs;
 }
 
 bool CreateDeviceD3D(HWND hWnd)
